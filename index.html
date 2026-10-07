@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Hollow Star</title>
+    <meta property="og:title" content="The Hollow Star" />
+    <meta property="og:description" content="A cozy first-person dark fantasy quest. Live in a wizard's tower in an autumn village, walk the Winterwood with your dog, and put out the eyes of the Hollow King." />
+    <meta property="og:image" content="https://d2ol7oe51mr4n9.cloudfront.net/user_3GC1jrhzpMVdJYJTOfDQeO31if4/dcf56bd0-4814-413d-92c3-d4de8f78b1d2.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="assets/img/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" />
+    <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }</script>
+    <style>
+      :root { --ink: #07051a; --indigo: #1a1040; --violet: #6a4cff; --pink: #c060ff; --red: #ff1a1a; --bone: #d8d4ff; --amber: #ffb060;
+        --title: "Cinzel", "Trajan Pro", Georgia, serif; --body: "IM Fell English", Georgia, serif; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--ink); color: var(--bone); overflow: hidden; }
+      body { font: 18px/1.45 var(--body); user-select: none; -webkit-user-select: none; }
+      canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+      .hidden { display: none !important; }
+      .screen { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; background: var(--ink) center / cover no-repeat; z-index: 20; padding: 24px; }
+      .screen::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(7, 5, 26, 0.15) 0%, rgba(7, 5, 26, 0.82) 100%); }
+      .screen > div { position: relative; max-width: 760px; }
+      h1 { font: 900 clamp(40px, 8vw, 92px) / 1 var(--title); letter-spacing: 0.08em; margin: 0; color: #fff; text-shadow: 0 0 28px var(--violet), 0 0 70px var(--pink), 0 4px 0 #000; }
+      h2 { font: 700 clamp(26px, 5vw, 56px) / 1.1 var(--title); letter-spacing: 0.1em; margin: 0; text-shadow: 0 0 24px var(--violet), 0 3px 0 #000; }
+      .red { color: #ffd0d0; text-shadow: 0 0 26px var(--red), 0 0 70px #a00, 0 3px 0 #000; }
+      .sub { font: 500 clamp(13px, 1.8vw, 18px) var(--title); letter-spacing: 0.42em; margin: 14px 0 34px; }
+      .line { font-size: clamp(18px, 2.4vw, 26px); font-style: italic; margin: 14px 0; text-shadow: 0 2px 6px #000; }
+      .hint { font-size: 15px; opacity: 0.8; margin-top: 26px; text-shadow: 0 2px 6px #000; }
+      .ver { font-size: 12px; opacity: 0.5; margin-top: 10px; letter-spacing: 0.1em; }
+      button, .btn { font: 700 20px var(--title); letter-spacing: 0.28em; color: #fff; cursor: pointer; text-decoration: none; display: inline-block; padding: 14px 44px 14px 50px; border: 1px solid var(--violet); border-radius: 2px;
+        background: linear-gradient(#2a1a70, #130b38); box-shadow: 0 0 24px rgba(106, 76, 255, 0.55), inset 0 0 14px rgba(192, 96, 255, 0.3); }
+      button:hover, .btn:hover { background: linear-gradient(#3b25a0, #1b1050); outline: none; box-shadow: 0 0 36px rgba(192, 96, 255, 0.85), inset 0 0 14px rgba(192, 96, 255, 0.4); }
+      button:disabled { opacity: 0.5; cursor: default; }
+      .btn.quiet { font-size: 13px; padding: 10px 26px 10px 30px; opacity: 0.8; margin-top: 18px; }
+      #loadbar { width: min(420px, 70vw); height: 4px; margin: 26px auto 0; background: rgba(216, 212, 255, 0.2); }
+      #loadbar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--violet), var(--pink)); box-shadow: 0 0 12px var(--pink); transition: width 0.2s; }
+      #loadtext { font: 12px var(--title); letter-spacing: 0.3em; opacity: 0.7; margin-top: 10px; }
+
+      #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; font-family: var(--title); }
+      #hud .tl { position: absolute; left: 20px; top: 18px; width: min(300px, 44vw); }
+      .bar { height: 14px; border: 1px solid rgba(216, 212, 255, 0.6); background: rgba(7, 5, 26, 0.7); box-shadow: 0 0 12px rgba(0, 0, 0, 0.6); }
+      .bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(#ff5a6a, #a01030); transition: width 0.12s linear; }
+      .row { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13px; letter-spacing: 0.14em; text-shadow: 0 1px 4px #000; }
+      .cd { position: relative; width: 38px; height: 38px; border: 1px solid rgba(216, 212, 255, 0.6); background: rgba(26, 16, 64, 0.8); display: grid; place-items: center; font-size: 10px; overflow: hidden; }
+      .cd > i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(7, 5, 26, 0.85); }
+      .cd > span { position: relative; }
+      #spells span { padding: 3px 8px; border: 1px solid rgba(216, 212, 255, 0.35); background: rgba(26, 16, 64, 0.7); font-size: 11px; opacity: 0.6; }
+      #spells span.on { opacity: 1; border-color: var(--pink); box-shadow: 0 0 10px rgba(192, 96, 255, 0.6); }
+      #tr { position: absolute; right: 20px; top: 18px; font-size: 13px; letter-spacing: 0.16em; text-shadow: 0 1px 4px #000; text-align: right; }
+      #shards b { display: inline-block; width: 14px; height: 14px; margin-left: 6px; transform: rotate(45deg); border: 1px solid var(--bone); vertical-align: -1px; }
+      #shards b.on { background: #fff; box-shadow: 0 0 12px #fff, 0 0 26px var(--violet); }
+      #clock { opacity: 0.75; margin-top: 6px; font-size: 12px; }
+      #inv { margin-top: 8px; font-size: 11px; opacity: 0.8; letter-spacing: 0.1em; }
+      #zone { position: absolute; left: 0; right: 0; top: 18%; text-align: center; font: 700 clamp(26px, 5vw, 52px) var(--title); letter-spacing: 0.3em; text-shadow: 0 0 24px var(--violet), 0 3px 0 #000; opacity: 0; transition: opacity 0.8s; }
+      #zone.show { opacity: 1; }
+      #prompt { position: absolute; left: 0; right: 0; bottom: 18%; text-align: center; font-size: 16px; letter-spacing: 0.14em; text-shadow: 0 0 10px #000, 0 2px 4px #000; }
+      #toast { position: absolute; left: 0; right: 0; bottom: 26%; text-align: center; font: italic 20px var(--body); text-shadow: 0 0 10px #000, 0 2px 4px #000; opacity: 0; transition: opacity 0.5s; }
+      #toast.show { opacity: 1; }
+      #boss { position: absolute; left: 50%; bottom: 26px; width: min(640px, 80vw); transform: translateX(-50%); text-align: center; font-size: 14px; letter-spacing: 0.3em; text-shadow: 0 0 10px var(--red), 0 2px 4px #000; }
+      #boss .bar { margin-top: 6px; border-color: rgba(255, 120, 120, 0.7); } #boss .bar > i { background: linear-gradient(#ff3a3a, #7a0000); }
+      #cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 6px #000; }
+      #lockhint { position: absolute; left: 0; right: 0; top: 50%; text-align: center; margin-top: 20px; font-size: 13px; letter-spacing: 0.3em; opacity: 0.8; text-shadow: 0 0 8px #000; }
+      #vign { position: fixed; inset: 0; pointer-events: none; z-index: 9; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0) 100%); transition: background 1.4s; }
+      #vign.sleep { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 8%, rgba(0,0,0,1) 55%); }
+      #vign.closed { background: rgba(0,0,0,1); }
+
+      #dialog { position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%); width: min(680px, 90vw); z-index: 15; padding: 20px 26px; background: rgba(12, 8, 40, 0.94); border: 1px solid var(--violet); box-shadow: 0 0 30px rgba(106, 76, 255, 0.5); }
+      #dialog h3 { margin: 0 0 8px; font: 700 14px var(--title); letter-spacing: 0.3em; color: var(--pink); }
+      #dialog p { margin: 0; font-size: 20px; font-style: italic; }
+      #dialog small { display: block; margin-top: 12px; font: 12px var(--title); letter-spacing: 0.2em; opacity: 0.6; text-align: right; }
+      #shop { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 92vw); z-index: 16; padding: 22px 26px; background: rgba(12, 8, 40, 0.96); border: 1px solid var(--pink); box-shadow: 0 0 30px rgba(192, 96, 255, 0.5); }
+      #shop h3 { margin: 0 0 4px; font: 700 15px var(--title); letter-spacing: 0.3em; color: var(--pink); }
+      #shop .have { font-size: 14px; opacity: 0.8; margin-bottom: 12px; }
+      #shop .item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(216, 212, 255, 0.15); font-size: 16px; }
+      #shop .item small { display: block; font-size: 13px; opacity: 0.7; font-style: italic; }
+      #shop .item button { font-size: 12px; padding: 7px 14px 7px 16px; letter-spacing: 0.16em; white-space: nowrap; }
+      #shop .close { margin-top: 12px; text-align: right; font: 12px var(--title); letter-spacing: 0.2em; opacity: 0.6; }
+      .panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(720px, 94vw); max-height: 86vh; overflow: auto; z-index: 16; padding: 22px 26px; background: rgba(12, 8, 40, 0.96); border: 1px solid var(--pink); box-shadow: 0 0 30px rgba(192, 96, 255, 0.5); }
+      .panel h3 { margin: 0 0 10px; font: 700 15px var(--title); letter-spacing: 0.3em; color: var(--pink); } .panel h4 { margin: 8px 0 4px; font: 700 12px var(--title); letter-spacing: 0.25em; opacity: 0.8; }
+      .panel .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } @media (max-width: 640px) { .panel .cols { grid-template-columns: 1fr; } }
+      .panel .q { padding: 7px 0; border-top: 1px solid rgba(216, 212, 255, 0.12); font-size: 15px; } .panel .q small { display: block; font-size: 13px; opacity: 0.7; font-style: italic; } .panel .q.done { opacity: 0.55; } .panel .q.dim { opacity: 0.4; }
+      .panel .have { font-size: 14px; opacity: 0.8; margin: 10px 0; } .panel .close { margin-top: 12px; text-align: right; font: 12px var(--title); letter-spacing: 0.2em; opacity: 0.6; }
+      .panel .item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(216, 212, 255, 0.15); font-size: 16px; } .panel .item small { display: block; font-size: 13px; opacity: 0.7; font-style: italic; } .panel .item button { font-size: 12px; padding: 7px 14px 7px 16px; letter-spacing: 0.16em; white-space: nowrap; }
+      .opts { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; margin: 0 auto 22px; width: min(420px, 80vw); font: 13px var(--title); letter-spacing: 0.2em; text-align: left; } .opts input { width: 100%; accent-color: var(--pink); }
+      body.photo #hud, body.photo #dev, body.photo #lockhint { opacity: 0 !important; }
+      #net { margin: 0 auto 18px; width: min(560px, 90vw); padding: 14px 18px; border: 1px solid rgba(192, 96, 255, 0.5); background: rgba(12, 8, 40, 0.7); text-align: left; font-size: 14px; }
+      #net h4 { margin: 0 0 10px; font: 700 12px var(--title); letter-spacing: 0.3em; color: var(--pink); } #net .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; } #net label { font: 12px var(--title); letter-spacing: 0.2em; opacity: 0.8; }
+      #net input[type=text] { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(216, 212, 255, 0.3); color: var(--ink, #eee9ff); padding: 7px 10px; font: 15px Georgia, serif; letter-spacing: 0.1em; width: 150px; } #joinCode { width: 70px; text-transform: uppercase; text-align: center; }
+      #net button { font-size: 11px; padding: 7px 12px; letter-spacing: 0.16em; } #netShare { margin: 8px 0; font-size: 14px; word-break: break-all; } #netShare b { font-size: 18px; letter-spacing: 0.3em; color: var(--pink); } #netStatus { margin-top: 6px; font-style: italic; opacity: 0.85; } #net .hint { margin-top: 8px; font-size: 12px; opacity: 0.6; font-style: italic; }
+      #chat { position: fixed; left: 50%; bottom: 14vh; transform: translateX(-50%); width: min(520px, 90vw); z-index: 14; background: rgba(12, 8, 40, 0.92); border: 1px solid var(--pink); color: #eee9ff; padding: 10px 14px; font: 16px Georgia, serif; }
+      #chatlog { position: fixed; left: 18px; bottom: 60px; margin: 0; z-index: 9; max-width: 42vw; font: italic 15px Georgia, serif; color: #eee9ff; text-shadow: 0 1px 4px #000; white-space: pre-wrap; opacity: 0; transition: opacity 0.6s; pointer-events: none; } #chatlog.show { opacity: 0.9; }
+      #netHud { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 9; font: 11px var(--title); letter-spacing: 0.2em; opacity: 0.6; pointer-events: none; }
+      #pause { background: rgba(7, 5, 26, 0.86); } #pause::before { display: none; }
+      #pause pre { font: 15px/1.9 var(--title); letter-spacing: 0.12em; margin: 22px 0 28px; }
+      #fade { position: fixed; inset: 0; background: var(--ink); z-index: 30; opacity: 0; pointer-events: none; transition: opacity 0.7s; } #fade.on { opacity: 1; }
+      #dev { position: fixed; left: 8px; bottom: 8px; z-index: 40; font: 11px/1.3 monospace; color: #8f8; white-space: pre; pointer-events: none; }
+      #ytbox { position: fixed; right: 14px; bottom: 14px; z-index: 25; width: 222px; background: rgba(12, 8, 40, 0.94); border: 1px solid var(--violet); box-shadow: 0 0 22px rgba(106, 76, 255, 0.5); }
+      #ytbox iframe, #ytplayer { display: block; width: 220px; height: 200px; border: 0; }
+      #ytname { font: 700 11px var(--title); letter-spacing: 0.18em; text-align: center; padding: 6px 4px; color: var(--bone); } #ytname::before { content: "MUSIC BOX - "; color: var(--pink); }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="vign"></div>
+
+    <div id="hud" class="hidden">
+      <div class="tl">
+        <div class="bar"><i id="hp"></i></div>
+        <div class="row"><span id="flask">FLASK 2</span><div class="cd" title="Nova"><i id="cdNova"></i><span>NOVA</span></div><div class="cd" title="Blink"><i id="cdBlink"></i><span>BLINK</span></div></div>
+        <div class="row" id="spells"><span>1 BOLT</span><span>2 EMBER</span><span>3 FROST</span></div>
+      </div>
+      <div id="tr"><div id="shards" class="hidden"><span id="shardText">SHARDS 0 / 3</span><b></b><b></b><b></b></div><div id="clock"></div><div id="inv"></div></div>
+      <div id="zone"></div><div id="toast"></div><div id="prompt"></div>
+      <div id="cross"></div><div id="lockhint" class="hidden">CLICK TO LOOK AROUND</div>
+      <div id="boss" class="hidden"><span id="bossName">THE HOLLOW KING</span><div class="bar"><i id="bossHp"></i></div></div>
+    </div>
+
+    <div id="dialog" class="hidden"><h3 id="dlgWho"></h3><p id="dlgText"></p><small>E - CONTINUE</small></div>
+    <div id="shop" class="hidden"><h3>THE RAVEN'S TRADES</h3><div class="have" id="shopHave"></div><div id="shopItems"></div><div class="close">ESC - LEAVE</div></div>
+    <div id="journal" class="hidden panel"><h3>THE JOURNAL</h3><div class="cols"><div><h4>QUESTS</h4><div id="jQuests"></div></div><div><h4>PAGES</h4><div id="jLore"></div></div></div><div class="have" id="jCrew"></div><div class="close">J or ESC - CLOSE</div></div>
+    <div id="brew" class="hidden panel"><h3>THE CAULDRON</h3><div class="have" id="brewHave"></div><div id="brewItems"></div><div class="close">ESC - STEP BACK</div></div>
+    <div id="ytbox" class="hidden"><div id="ytplayer"></div><div id="ytname"></div></div>
+
+    <div id="menu" class="screen" style="background-image: url(assets/img/title.webp)">
+      <div>
+        <h1>THE HOLLOW STAR</h1>
+        <div class="sub">A COZY DARK QUEST</div>
+        <button id="btnBegin" type="button" disabled>LOADING</button>
+        <div id="loadbar"><i></i></div><div id="loadtext">WAKING THE TOWER</div>
+        <div class="hint">WASD move - Mouse look - LMB cast - RMB nova - 1 2 3 spells - SPACE blink - Q flask - E interact - F throw - J journal - B dance - V camera - G whistle - ESC friends &amp; options</div>
+        <a class="btn quiet" href="classic/">CLASSIC 2D MODE</a>
+        <div class="ver">The Hollow Star v2.0</div>
+      </div>
+    </div>
+    <div id="card" class="screen hidden" style="background-image: url(assets/img/bossintro.webp)"><div><h2 class="red">THE HOLLOW KING</h2><p class="line">He has been waiting.</p></div></div>
+    <div id="death" class="screen hidden" style="background: rgba(20, 0, 8, 0.78)"><div><h2 class="red">YOU FELL</h2><p class="line">Rising at the last waystone...</p></div></div>
+    <div id="ending" class="screen hidden" style="background-image: url(assets/img/ending.webp)"><div><h2>THE EYES ARE DARK.</h2><p class="line">The stars come back, one by one.</p><p class="line" id="endTime">Time: 0:00</p><button id="btnAgain" type="button">GO HOME</button></div></div>
+    <div id="pause" class="screen hidden"><div><h2>PAUSED</h2><pre>WASD - MOVE          MOUSE - LOOK         SHIFT - RUN
+LMB - CAST           RMB - NOVA           1 2 3 - BOLT / EMBER / FROST
+SPACE - BLINK        Q - MOONFLASK        E - INTERACT
+V - CAMERA           G - WHISTLE          M - MUTE
+F - THROW A STICK / SNOWBALL          J - JOURNAL
+B - DANCE            SHIFT - RUN / GALLOP
+P - HIDE THE HUD (FOR THE VIEWS)</pre><div class="opts"><label>FIELD OF VIEW</label><input id="opt_fov" type="range" min="60" max="100" step="1" /><label>HEAD BOB</label><input id="opt_bob" type="range" min="0" max="1.5" step="0.1" /><label>FILM GRAIN</label><input id="opt_grain" type="range" min="0" max="2" step="0.1" /></div><div id="net"><h4>PLAY WITH FRIENDS</h4><div class="row"><label>YOUR NAME</label><input id="netName" type="text" maxlength="14" placeholder="a wizard" /></div><div class="row"><button id="btnHost" type="button">HOST A WORLD</button><span id="joinRow"><input id="joinCode" type="text" maxlength="4" placeholder="CODE" /><button id="btnJoin" type="button">JOIN</button></span><button id="btnLeave" type="button" class="hidden">LEAVE</button></div><div id="netShare" class="hidden">WORLD CODE <b id="netCode"></b> · <span id="netLink"></span> <button id="btnCopy" type="button">COPY LINK</button></div><div id="netStatus"></div><div class="hint">Friends see your wizard walk, cast, sit, dance and ride wherever you share a room. ENTER chats. Each of you keeps your own world and save; the host keeps the clock.</div></div><button id="btnResume" type="button">BACK TO GAME</button></div></div>
+    <input id="chat" class="hidden" type="text" maxlength="120" placeholder="say something… (Enter to send, Esc to cancel)" autocomplete="off" /><pre id="chatlog"></pre><div id="netHud"></div>
+    <div id="fade"></div>
+    <div id="dev" class="hidden"></div>
+    <script src="vendor/peerjs/peerjs.min.js"></script>
+    <script type="module" src="game/main.js"></script>
+  </body>
+</html>

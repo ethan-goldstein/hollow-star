@@ -1,0 +1,16 @@
+{
+  "lair": [
+    "lair_1.mp3"
+  ],
+  "boss": "boss.mp3",
+  "chamber": "chamber.mp3",
+  "dance": "dance.mp3",
+  "festival": "festival.mp3",
+  "road": "road.mp3",
+  "tavern": "tavern.mp3",
+  "title": "title.mp3",
+  "town": "town.mp3",
+  "vale": "vale.mp3",
+  "victory": "victory.mp3",
+  "winter": "winter.mp3"
+}
